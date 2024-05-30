@@ -1,20 +1,61 @@
 #include <SDL.h>
 #include <iostream>
+#include <SDL_ttf.h>
+
 //#include <SDL2/SDL2_gfxPrimitives.h>
 
-int WINDOW_WIDTH = 600;
-int WINDOW_HEIGHT = 600;
+int WINDOW_WIDTH = 900;
+int WINDOW_HEIGHT = 675;
 int Counter = 0;
+int X_Score = 0;
+int O_Score = 0;
+int number_of_draw = 0;
+
+
+
 enum Player { NONE, PLAYER_X, PLAYER_O };
 Player board[3][3] = { NONE };
 Player currentPlayer = PLAYER_X; // Start with PLAYER_X
 
+
+
+
+
+SDL_Texture* renderText(const std::string& message, SDL_Color color, TTF_Font* font, SDL_Renderer* renderer) {
+    SDL_Surface* surface = TTF_RenderText_Blended(font, message.c_str(), color);
+    if (!surface) {
+        std::cerr << "TTF_RenderText_Blended Error: " << TTF_GetError() << std::endl;
+        return nullptr;
+    }
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+    SDL_FreeSurface(surface);
+    return texture;
+}
+void drawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int thickness) {
+    double angle = atan2(y2 - y1, x2 - x1);
+    double half_thickness = thickness / 2.0;
+
+    for (double i = -half_thickness; i <= half_thickness; i += 1.0) {
+        double offset_x = i * sin(angle);
+        double offset_y = i * -cos(angle);
+        SDL_RenderDrawLine(renderer, x1 + offset_x, y1 + offset_y, x2 + offset_x, y2 + offset_y);
+    }
+}
+void onButtonClick() {
+    std::cout << "Score reseted" << std::endl;
+    X_Score = 0;
+    O_Score = 0;
+    number_of_draw = 0;
+}
+
 void drawBoard(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     for (int i = 1; i < 3; ++i) {
-        SDL_RenderDrawLine(renderer, i * (WINDOW_WIDTH / 3), 0, i * (WINDOW_WIDTH / 3), WINDOW_HEIGHT);
-        SDL_RenderDrawLine(renderer, 0, i * (WINDOW_HEIGHT / 3), WINDOW_WIDTH, i * (WINDOW_HEIGHT / 3));
+        SDL_RenderDrawLine(renderer, i * (WINDOW_WIDTH / 4), 0, i * (WINDOW_WIDTH / 4), WINDOW_HEIGHT);
+        SDL_RenderDrawLine(renderer, 0, i * (WINDOW_HEIGHT / 3), WINDOW_WIDTH*0.75, i * (WINDOW_HEIGHT / 3));
     }
+    drawThickLine(renderer, (WINDOW_WIDTH * 3 / 4), 0, 3 * (WINDOW_WIDTH / 4), WINDOW_HEIGHT,5);
+
 }
 
 // Function to draw a single circle outline
@@ -53,18 +94,57 @@ void thickCircleOutline(SDL_Renderer* renderer, int x, int y, int radius, int th
 }
 
 
+struct Button {
+    SDL_Rect rect;
+    SDL_Color color;
+    SDL_Color hoverColor;
+    SDL_Color clickColor;
+    bool isHovered;
+    bool isClicked;
+    void (*onClick)(); // Function pointer for the button action
+};
 
-// Function to draw a thick line
-void drawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int thickness) {
-    double angle = atan2(y2 - y1, x2 - x1);
-    double half_thickness = thickness / 2.0;
+void renderButton(SDL_Renderer* renderer, Button* button) {
+    SDL_Color color;
+    if (button->isClicked) {
+        color = button->clickColor;
+    }
+    else if (button->isHovered) {
+        color = button->hoverColor;
+    }
+    else {
+        color = button->color;
+    }
 
-    for (double i = -half_thickness; i <= half_thickness; i += 1.0) {
-        double offset_x = i * sin(angle);
-        double offset_y = i * -cos(angle);
-        SDL_RenderDrawLine(renderer, x1 + offset_x, y1 + offset_y, x2 + offset_x, y2 + offset_y);
+    SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+    SDL_RenderFillRect(renderer, &button->rect);
+}
+void handleButtonEvent(SDL_Event* event, Button* button) {
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+
+    bool inside = (x >= button->rect.x && x <= button->rect.x + button->rect.w &&
+        y >= button->rect.y && y <= button->rect.y + button->rect.h);
+
+    if (inside) {
+        button->isHovered = true;
+        if (event->type == SDL_MOUSEBUTTONDOWN && event->button.button == SDL_BUTTON_LEFT) {
+            button->isClicked = true;
+        }
+        else if (event->type == SDL_MOUSEBUTTONUP && event->button.button == SDL_BUTTON_LEFT) {
+            button->isClicked = false;
+            if (button->onClick != nullptr) {
+                button->onClick(); // Trigger button action
+            }
+        }
+    }
+    else {
+        button->isHovered = false;
+        button->isClicked = false;
     }
 }
+
+// Function to draw a thick line
 
 
 
@@ -145,18 +225,18 @@ void drawMarks(SDL_Renderer* renderer) {
             if (board[row][col] != NONE) {
                 if (board[row][col] == PLAYER_X) {
                     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red color for 'X'
-                    drawThickLine(renderer, col * (WINDOW_WIDTH / 3) +0.05* WINDOW_WIDTH, row * (WINDOW_HEIGHT / 3) + 0.05 * WINDOW_HEIGHT,
-                        (col + 1) * (WINDOW_WIDTH / 3) - 0.05 * WINDOW_WIDTH, (row + 1) * (WINDOW_HEIGHT / 3) - 0.05 * WINDOW_HEIGHT, 7);
-                    drawThickLine(renderer, (col + 1) * (WINDOW_WIDTH / 3) - 0.05 * WINDOW_WIDTH, row * (WINDOW_HEIGHT / 3) + 0.05 * WINDOW_HEIGHT,
-                        col * (WINDOW_WIDTH / 3) + 0.05 * WINDOW_WIDTH, (row + 1) * (WINDOW_HEIGHT / 3) - 0.05 * WINDOW_HEIGHT,7);
+                    drawThickLine(renderer, col * (WINDOW_WIDTH / 4) +0.05* WINDOW_WIDTH*0.75, row * (WINDOW_HEIGHT / 3) + 0.05 * WINDOW_HEIGHT,
+                        (col + 1) * (WINDOW_WIDTH / 4) - 0.05 * WINDOW_WIDTH*0.75, (row + 1) * (WINDOW_HEIGHT / 3) - 0.05 * WINDOW_HEIGHT, 7);
+                    drawThickLine(renderer, (col + 1) * (WINDOW_WIDTH / 4) - 0.05 * WINDOW_WIDTH*0.75, row * (WINDOW_HEIGHT / 3) + 0.05 * WINDOW_HEIGHT,
+                        col * (WINDOW_WIDTH / 4) + 0.05 * WINDOW_WIDTH*0.75, (row + 1) * (WINDOW_HEIGHT / 3) - 0.05 * WINDOW_HEIGHT,7);
                 }
                 else if (board[row][col] == PLAYER_O) {
                     SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Blue color for 'O'
-                    int centerX = col * (WINDOW_WIDTH / 3) + (WINDOW_WIDTH / 6);
+                    int centerX = col * (WINDOW_WIDTH / 4) + (WINDOW_WIDTH / 8);
                     int centerY = row * (WINDOW_HEIGHT / 3) + (WINDOW_HEIGHT / 6);
                     int radius;
                     if (WINDOW_WIDTH< WINDOW_HEIGHT){
-                         radius = (WINDOW_WIDTH / 6) - 10;
+                         radius = (WINDOW_WIDTH / 8) - 10;
                     }
                     else {
                          radius = (WINDOW_HEIGHT / 6) - 10;
@@ -180,6 +260,9 @@ void resetGame() {
     }
     // Reset the current player
     currentPlayer = PLAYER_X;
+    Counter = 0;
+
+
 }
 
 
@@ -233,6 +316,26 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    //clear screen button
+    Button button;
+    button.rect = { 700, 50, 60, 25 };
+    button.color = { 0,192,192,192 };      // Blue
+    button.hoverColor = { 0, 100, 255, 255 }; // Light blue
+    button.clickColor = { 0, 0, 150, 255 }; // Dark blue
+    button.isHovered = false;
+    button.isClicked = false;
+    button.onClick = resetGame;
+
+
+    //rest score button
+    Button button1;
+    button1.rect = { 700, 150, 60, 25 };
+    button1.color = { 0, 0, 255, 0 };      // Blue
+    button1.hoverColor = { 0, 100, 255, 255 }; // Light blue
+    button1.clickColor = { 0, 0, 150, 255 }; // Dark blue
+    button1.isHovered = false;
+    button1.isClicked = false;
+    button1.onClick = onButtonClick;
 
     // Main event loop
     bool running = true;
@@ -240,26 +343,34 @@ int main(int argc, char* argv[]) {
     while (running) {
         // Handle events
         while (SDL_PollEvent(&event)) {
+            handleButtonEvent(&event, &button);
+            handleButtonEvent(&event, &button1);
+
             if (event.type == SDL_QUIT) {
                 running = false;
             }
-            
             else if (event.type == SDL_MOUSEBUTTONDOWN) {
-                int col = event.button.x / (WINDOW_WIDTH / 3);
+               
+                int col = event.button.x / (WINDOW_WIDTH / 4);
                 int row = event.button.y / (WINDOW_HEIGHT / 3);
+                if (col == 3) {
+                    break;
+
+                }
                 if (board[row][col] == NONE) {
                     board[row][col] = currentPlayer;
                     if (checkWin(currentPlayer)) {
                         std::cout << (currentPlayer == PLAYER_X ? "Player X" : "Player O") << " wins!" << std::endl;
-                        Counter = 0;
+                        currentPlayer == PLAYER_X ? X_Score++ : O_Score++;
+                        std::cout << "X Score = "<< X_Score<< ",   O Score = "<<O_Score<<",   number of draws = "<< number_of_draw<<std::endl;
                         resetGame();
                     }
                     else {
                         currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
-
+                        Counter++;
                     }
                 }
-                Counter++;
+                
             }
             else if (event.type == SDL_WINDOWEVENT) {
                 if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -267,11 +378,20 @@ int main(int argc, char* argv[]) {
                     WINDOW_HEIGHT = event.window.data2;
                 }
             }
+            
+
+
         }
+
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
+        
+
+        // Render the button
+        renderButton(renderer, &button);
+        renderButton(renderer, &button1);
 
         // Draw the game board and marks
         drawBoard(renderer);
@@ -281,8 +401,14 @@ int main(int argc, char* argv[]) {
         SDL_RenderPresent(renderer);
         if (Counter > 8) {
            Counter = 0;
+           number_of_draw++;
+           std::cout << "it is a draw "<< std::endl<<"X Score = " << X_Score << ", O Score = " << O_Score << ", number of draws = " << number_of_draw << std::endl;
            resetGame();
         }
+
+       
+
+
     }
 
     // Clean up
