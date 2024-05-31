@@ -1,8 +1,7 @@
 #include <SDL.h>
 #include <iostream>
 #include <SDL_ttf.h>
-
-//#include <SDL2/SDL2_gfxPrimitives.h>
+#include<string>
 
 int WINDOW_WIDTH = 900;
 int WINDOW_HEIGHT = 675;
@@ -21,6 +20,7 @@ Player currentPlayer = PLAYER_X; // Start with PLAYER_X
 
 
 
+//ftt functions
 SDL_Texture* renderText(const std::string& message, SDL_Color color, TTF_Font* font, SDL_Renderer* renderer) {
     SDL_Surface* surface = TTF_RenderText_Blended(font, message.c_str(), color);
     if (!surface) {
@@ -31,6 +31,9 @@ SDL_Texture* renderText(const std::string& message, SDL_Color color, TTF_Font* f
     SDL_FreeSurface(surface);
     return texture;
 }
+
+
+
 void drawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int thickness) {
     double angle = atan2(y2 - y1, x2 - x1);
     double half_thickness = thickness / 2.0;
@@ -93,7 +96,7 @@ void thickCircleOutline(SDL_Renderer* renderer, int x, int y, int radius, int th
     }
 }
 
-
+// button functions and classes
 struct Button {
     SDL_Rect rect;
     SDL_Color color;
@@ -103,21 +106,18 @@ struct Button {
     bool isClicked;
     void (*onClick)(); // Function pointer for the button action
 };
-
-void renderButton(SDL_Renderer* renderer, Button* button) {
-    SDL_Color color;
+void renderButton(SDL_Renderer* renderer, Button* button, SDL_Texture* textTexture, SDL_Rect* textRect) {
+    SDL_Color color = button->color;
     if (button->isClicked) {
         color = button->clickColor;
     }
     else if (button->isHovered) {
         color = button->hoverColor;
     }
-    else {
-        color = button->color;
-    }
 
     SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
     SDL_RenderFillRect(renderer, &button->rect);
+    SDL_RenderCopy(renderer, textTexture, nullptr, textRect);
 }
 void handleButtonEvent(SDL_Event* event, Button* button) {
     int x, y;
@@ -147,19 +147,6 @@ void handleButtonEvent(SDL_Event* event, Button* button) {
 // Function to draw a thick line
 
 
-
-/*void thickCircleRGBA(SDL_Renderer* renderer, int x, int y, int radius, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    SDL_SetRenderDrawColor(renderer, r, g, b, a);
-
-    for (int t = 0; t < thickness; t++) {
-        int rr = radius + t - thickness / 2;
-        for (int w = 0; w < rr * 2; w++) {
-            int h = (int)sqrt(rr * rr - (rr - w) * (rr - w));
-            SDL_RenderDrawPoint(renderer, x + (rr - w), y + h);
-            SDL_RenderDrawPoint(renderer, x + (rr - w), y - h);
-        }
-    }
-}*/
 
 void SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int radius) {
     int offsetX, offsetY, d;
@@ -300,6 +287,13 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    //initialize tiff
+    if (TTF_Init() == -1) {
+        std::cerr << "TTF_Init Error: " << TTF_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
     // Create window
     SDL_Window* window = SDL_CreateWindow("Tic-Tac-Toe", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
     if (window == nullptr) {
@@ -316,9 +310,53 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    
+
+    //create font
+    TTF_Font* font = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\GloriousChristmas-BLWWB.ttf", 12); // Path to your .ttf file and font size
+    if (!font) {
+        std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+    TTF_Font* font_Score = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 100); // Path to your .ttf file and font size
+    if (!font) {
+        std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+    TTF_Font* font_Score_1 = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 24); // Path to your .ttf file and font size
+    if (!font) {
+        std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Color textColor = { 0, 0, 0, 255 }; // Black text
+    SDL_Texture* textTexture = renderText("Rest Game", textColor, font, renderer);
+    SDL_Texture* textTexture1 = renderText("Rest Score", textColor, font, renderer);
+    SDL_Texture* textTexture_X_Score = renderText("X Score", textColor, font_Score, renderer);
+    SDL_Texture* textTexture_O_Score = renderText("O Score", textColor, font_Score, renderer);
+    SDL_Texture* textTexture_draw_Score = renderText("Number of draws", textColor, font_Score, renderer);
+    SDL_Texture* textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score_1, renderer);
+    SDL_Texture* textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score_1, renderer);
+    SDL_Texture* textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score_1, renderer);
+
+    int textW = 0, textH = 0;
+    SDL_QueryTexture(textTexture, nullptr, nullptr, &textW, &textH);
+    SDL_Rect textRect;
+    SDL_Rect textRect1;
+    SDL_Rect textRectX;
+    SDL_Rect textRectO;
+    SDL_Rect textRectdraw;
+    SDL_Rect textRectX_1;
+    SDL_Rect textRectO_1;
+    SDL_Rect textRectdraw_1;
+
     //clear screen button
+
+
     Button button;
-    button.rect = { 700, 50, 60, 25 };
     button.color = { 0,192,192,192 };      // Blue
     button.hoverColor = { 0, 100, 255, 255 }; // Light blue
     button.clickColor = { 0, 0, 150, 255 }; // Dark blue
@@ -329,7 +367,6 @@ int main(int argc, char* argv[]) {
 
     //rest score button
     Button button1;
-    button1.rect = { 700, 150, 60, 25 };
     button1.color = { 0, 0, 255, 0 };      // Blue
     button1.hoverColor = { 0, 100, 255, 255 }; // Light blue
     button1.clickColor = { 0, 0, 150, 255 }; // Dark blue
@@ -379,19 +416,38 @@ int main(int argc, char* argv[]) {
                 }
             }
             
-
+            textRectX_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 5 * 2 , 20, 25 };
+            textRectO_1 = { WINDOW_WIDTH * 9 / 10 + 40 , WINDOW_HEIGHT * 6 / 10, 20, 25 };
+            textRectdraw_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 4 * 3, 20, 25 };
+            
 
         }
 
+        button.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 10, 80, 35 };
+        button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 80, 35 };
+        textRect = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 10 +10 , textW, textH }; 
+        textRect1 = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 4 +10, textW, textH }; 
+        textRectX = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 5*2 , 70, 25 };
+        textRectO = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT *6/10, 70, 25 };
+        textRectdraw = { WINDOW_WIDTH * 7 / 9 -30 + 10, WINDOW_HEIGHT / 4*3, 130, 25 };
+        
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderClear(renderer);
-        
+
 
         // Render the button
-        renderButton(renderer, &button);
-        renderButton(renderer, &button1);
+        renderButton(renderer, &button, textTexture, &textRect);
+        renderButton(renderer, &button1, textTexture1, &textRect1);
+        SDL_RenderCopy(renderer, textTexture_X_Score, nullptr, &textRectX);
+        SDL_RenderCopy(renderer, textTexture_O_Score, nullptr, &textRectO);
+        SDL_RenderCopy(renderer, textTexture_draw_Score, nullptr, &textRectdraw);
+        SDL_RenderCopy(renderer, textTexture_X_Score_1, nullptr, &textRectX_1);
+        SDL_RenderCopy(renderer, textTexture_O_Score_1, nullptr, &textRectO_1);
+        SDL_RenderCopy(renderer, textTexture_draw_Score_1, nullptr, &textRectdraw_1);
+
+
 
         // Draw the game board and marks
         drawBoard(renderer);
@@ -415,5 +471,6 @@ int main(int argc, char* argv[]) {
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
+    TTF_Quit();
     return 0;
 }
