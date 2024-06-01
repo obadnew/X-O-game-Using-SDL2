@@ -33,7 +33,7 @@ SDL_Texture* renderText(const std::string& message, SDL_Color color, TTF_Font* f
 }
 
 
-
+//drawing functions
 void drawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int thickness) {
     double angle = atan2(y2 - y1, x2 - x1);
     double half_thickness = thickness / 2.0;
@@ -44,13 +44,6 @@ void drawThickLine(SDL_Renderer* renderer, int x1, int y1, int x2, int y2, int t
         SDL_RenderDrawLine(renderer, x1 + offset_x, y1 + offset_y, x2 + offset_x, y2 + offset_y);
     }
 }
-void onButtonClick() {
-    std::cout << "Score reseted" << std::endl;
-    X_Score = 0;
-    O_Score = 0;
-    number_of_draw = 0;
-}
-
 void drawBoard(SDL_Renderer* renderer) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     for (int i = 1; i < 3; ++i) {
@@ -60,8 +53,6 @@ void drawBoard(SDL_Renderer* renderer) {
     drawThickLine(renderer, (WINDOW_WIDTH * 3 / 4), 0, 3 * (WINDOW_WIDTH / 4), WINDOW_HEIGHT,5);
 
 }
-
-// Function to draw a single circle outline
 void circleOutline(SDL_Renderer* renderer, int x, int y, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
     SDL_SetRenderDrawColor(renderer, r, g, b, a);
     int offset_x = 0;
@@ -88,13 +79,56 @@ void circleOutline(SDL_Renderer* renderer, int x, int y, int radius, Uint8 r, Ui
         offset_x++;
     }
 }
-
-// Function to draw a thick circle outline
 void thickCircleOutline(SDL_Renderer* renderer, int x, int y, int radius, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
     for (int t = 0; t < thickness; t++) {
         circleOutline(renderer, x, y, radius + t - thickness / 2, r, g, b, a);
     }
 }
+void SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int radius) {
+    int offsetX, offsetY, d;
+    offsetX = 0;
+    offsetY = radius;
+    d = radius - 1;
+    while (offsetY >= offsetX) {
+        SDL_RenderDrawPoint(renderer, x + offsetX, y + offsetY);
+        SDL_RenderDrawPoint(renderer, x + offsetY, y + offsetX);
+        SDL_RenderDrawPoint(renderer, x - offsetX, y + offsetY);
+        SDL_RenderDrawPoint(renderer, x - offsetY, y + offsetX);
+        SDL_RenderDrawPoint(renderer, x + offsetX, y - offsetY);
+        SDL_RenderDrawPoint(renderer, x + offsetY, y - offsetX);
+        SDL_RenderDrawPoint(renderer, x - offsetX, y - offsetY);
+        SDL_RenderDrawPoint(renderer, x - offsetY, y - offsetX);
+        if (d >= 2 * offsetX) {
+            d -= 2 * offsetX + 1;
+            offsetX++;
+        }
+        else if (d < 2 * (radius - offsetY)) {
+            d += 2 * offsetY - 1;
+            offsetY--;
+        }
+        else {
+            d += 2 * (offsetY - offsetX - 1);
+            offsetY--;
+            offsetX++;
+        }
+    }
+}
+void filledCircleRGBA(SDL_Renderer* renderer, int x, int y, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+    SDL_SetRenderDrawColor(renderer, r, g, b, a);
+    for (int w = -radius; w <= radius; w++) {
+        for (int h = -radius; h <= radius; h++) {
+            if ((w * w + h * h) <= (radius * radius)) {
+                SDL_RenderDrawPoint(renderer, x + w, y + h);
+            }
+        }
+    }
+}
+void thickCircleRGBA(SDL_Renderer* renderer, int x, int y, int radius, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
+    for (int t = 0; t < thickness; t++) {
+        filledCircleRGBA(renderer, x, y, radius + t - thickness / 2, r, g, b, a);
+    }
+}
+
 
 // button functions and classes
 struct Button {
@@ -143,58 +177,21 @@ void handleButtonEvent(SDL_Event* event, Button* button) {
         button->isClicked = false;
     }
 }
-
-// Function to draw a thick line
-
-
-
-void SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int radius) {
-    int offsetX, offsetY, d;
-    offsetX = 0;
-    offsetY = radius;
-    d = radius - 1;
-    while (offsetY >= offsetX) {
-        SDL_RenderDrawPoint(renderer, x + offsetX, y + offsetY);
-        SDL_RenderDrawPoint(renderer, x + offsetY, y + offsetX);
-        SDL_RenderDrawPoint(renderer, x - offsetX, y + offsetY);
-        SDL_RenderDrawPoint(renderer, x - offsetY, y + offsetX);
-        SDL_RenderDrawPoint(renderer, x + offsetX, y - offsetY);
-        SDL_RenderDrawPoint(renderer, x + offsetY, y - offsetX);
-        SDL_RenderDrawPoint(renderer, x - offsetX, y - offsetY);
-        SDL_RenderDrawPoint(renderer, x - offsetY, y - offsetX);
-        if (d >= 2 * offsetX) {
-            d -= 2 * offsetX + 1;
-            offsetX++;
-        }
-        else if (d < 2 * (radius - offsetY)) {
-            d += 2 * offsetY - 1;
-            offsetY--;
-        }
-        else {
-            d += 2 * (offsetY - offsetX - 1);
-            offsetY--;
-            offsetX++;
-        }
-    }
+bool isPointInRect(int x, int y, SDL_Rect rect) {
+    return (x >= rect.x && x <= rect.x + rect.w && y >= rect.y && y <= rect.y + rect.h);
+}
+void Rest_Score() {
+    std::cout << "Score reseted" << std::endl;
+    X_Score = 0;
+    O_Score = 0;
+    number_of_draw = 0;
 }
 
-// Function to draw a filled circle
-void filledCircleRGBA(SDL_Renderer* renderer, int x, int y, int radius, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    SDL_SetRenderDrawColor(renderer, r, g, b, a);
-    for (int w = -radius; w <= radius; w++) {
-        for (int h = -radius; h <= radius; h++) {
-            if ((w * w + h * h) <= (radius * radius)) {
-                SDL_RenderDrawPoint(renderer, x + w, y + h);
-            }
-        }
-    }
-}
 
-void thickCircleRGBA(SDL_Renderer* renderer, int x, int y, int radius, int thickness, Uint8 r, Uint8 g, Uint8 b, Uint8 a) {
-    for (int t = 0; t < thickness; t++) {
-        filledCircleRGBA(renderer, x, y, radius + t - thickness / 2, r, g, b, a);
-    }
-}
+
+
+
+
 
 bool placeMark(int x, int y, Player currentPlayer) {
     int row = y / (WINDOW_HEIGHT / 3);
@@ -205,7 +202,6 @@ bool placeMark(int x, int y, Player currentPlayer) {
     }
     return false;
 }
-
 void drawMarks(SDL_Renderer* renderer) {
     for (int row = 0; row < 3; ++row) {
         for (int col = 0; col < 3; ++col) {
@@ -237,7 +233,6 @@ void drawMarks(SDL_Renderer* renderer) {
     }
 
 }
-
 void resetGame() {
     // Reset the board
     for (int row = 0; row < 3; ++row) {
@@ -251,8 +246,6 @@ void resetGame() {
 
 
 }
-
-
 bool checkWin(Player player) {
     // Check rows and columns
     for (int i = 0; i < 3; ++i) {
@@ -270,15 +263,8 @@ bool checkWin(Player player) {
 }
 
 
-void testDrawCircle(SDL_Renderer* renderer) {
-    // Test by drawing a circle in the middle of the screen
-    int centerX = WINDOW_WIDTH / 2;
-    int centerY = WINDOW_HEIGHT / 2;
-    int radius = 50;
-    SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255); // Blue color
-    SDL_RenderDrawCircle(renderer, centerX, centerY, radius);
-}
 
+//main function
 
 int main(int argc, char* argv[]) {
     // Initialize SDL
@@ -313,24 +299,19 @@ int main(int argc, char* argv[]) {
     
 
     //create font
-    TTF_Font* font = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\GloriousChristmas-BLWWB.ttf", 12); // Path to your .ttf file and font size
+    TTF_Font* font = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 16); // Path to your .ttf file and font size
     if (!font) {
         std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
         SDL_Quit();
         return 1;
     }
-    TTF_Font* font_Score = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 100); // Path to your .ttf file and font size
+    TTF_Font* font_Score = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 20); // Path to your .ttf file and font size
     if (!font) {
         std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
         SDL_Quit();
         return 1;
     }
-    TTF_Font* font_Score_1 = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 24); // Path to your .ttf file and font size
-    if (!font) {
-        std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
+
 
     SDL_Color textColor = { 0, 0, 0, 255 }; // Black text
     SDL_Texture* textTexture = renderText("Rest Game", textColor, font, renderer);
@@ -338,12 +319,32 @@ int main(int argc, char* argv[]) {
     SDL_Texture* textTexture_X_Score = renderText("X Score", textColor, font_Score, renderer);
     SDL_Texture* textTexture_O_Score = renderText("O Score", textColor, font_Score, renderer);
     SDL_Texture* textTexture_draw_Score = renderText("Number of draws", textColor, font_Score, renderer);
-    SDL_Texture* textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score_1, renderer);
-    SDL_Texture* textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score_1, renderer);
-    SDL_Texture* textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score_1, renderer);
+    SDL_Texture* textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
+    SDL_Texture* textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
+    SDL_Texture* textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
 
     int textW = 0, textH = 0;
+    int textW1 = 0, textH1 = 0;
+    int textW2 = 0, textH2 = 0;
+    int textW3 = 0, textH3 = 0;
+
     SDL_QueryTexture(textTexture, nullptr, nullptr, &textW, &textH);
+    SDL_QueryTexture(textTexture1, nullptr, nullptr, &textW, &textH);
+
+    SDL_QueryTexture(textTexture_X_Score, nullptr, nullptr, &textW1, &textH1);
+    SDL_QueryTexture(textTexture_O_Score, nullptr, nullptr, &textW1, &textH1);
+    SDL_QueryTexture(textTexture_draw_Score, nullptr, nullptr, &textW3, &textH3);
+
+    SDL_QueryTexture(textTexture_X_Score_1, nullptr, nullptr, &textW2, &textH2);
+    SDL_QueryTexture(textTexture_O_Score_1, nullptr, nullptr, &textW2, &textH2);
+    SDL_QueryTexture(textTexture_draw_Score_1, nullptr, nullptr, &textW2, &textH2);
+    
+    
+    
+
+    
+    
+    
     SDL_Rect textRect;
     SDL_Rect textRect1;
     SDL_Rect textRectX;
@@ -372,8 +373,10 @@ int main(int argc, char* argv[]) {
     button1.clickColor = { 0, 0, 150, 255 }; // Dark blue
     button1.isHovered = false;
     button1.isClicked = false;
-    button1.onClick = onButtonClick;
+    button1.onClick = Rest_Score;
 
+
+    button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 100, 40 };
     // Main event loop
     bool running = true;
     SDL_Event event;
@@ -392,7 +395,6 @@ int main(int argc, char* argv[]) {
                 int row = event.button.y / (WINDOW_HEIGHT / 3);
                 if (col == 3) {
                     break;
-
                 }
                 if (board[row][col] == NONE) {
                     board[row][col] = currentPlayer;
@@ -400,8 +402,12 @@ int main(int argc, char* argv[]) {
                         std::cout << (currentPlayer == PLAYER_X ? "Player X" : "Player O") << " wins!" << std::endl;
                         currentPlayer == PLAYER_X ? X_Score++ : O_Score++;
                         std::cout << "X Score = "<< X_Score<< ",   O Score = "<<O_Score<<",   number of draws = "<< number_of_draw<<std::endl;
+                        textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
+                        textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
+                        textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
                         resetGame();
                     }
+                    
                     else {
                         currentPlayer = (currentPlayer == PLAYER_X) ? PLAYER_O : PLAYER_X;
                         Counter++;
@@ -415,22 +421,24 @@ int main(int argc, char* argv[]) {
                     WINDOW_HEIGHT = event.window.data2;
                 }
             }
+
+
+
             
-            textRectX_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 5 * 2 , 20, 25 };
-            textRectO_1 = { WINDOW_WIDTH * 9 / 10 + 40 , WINDOW_HEIGHT * 6 / 10, 20, 25 };
-            textRectdraw_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 4 * 3, 20, 25 };
             
 
         }
 
-        button.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 10, 80, 35 };
-        button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 80, 35 };
-        textRect = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 10 +10 , textW, textH }; 
-        textRect1 = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 4 +10, textW, textH }; 
-        textRectX = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT / 5*2 , 70, 25 };
-        textRectO = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT *6/10, 70, 25 };
-        textRectdraw = { WINDOW_WIDTH * 7 / 9 -30 + 10, WINDOW_HEIGHT / 4*3, 130, 25 };
-        
+        button.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 10, 100, 40 };
+        button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 100, 40 };
+        textRect = { WINDOW_WIDTH * 7 / 9 +10, WINDOW_HEIGHT / 10 +10 , textW, textH }; 
+        textRect1 = { WINDOW_WIDTH * 7 / 9 +10, WINDOW_HEIGHT / 4 +10, textW, textH }; 
+        textRectX = { WINDOW_WIDTH * 7 / 9  , WINDOW_HEIGHT / 5*2 ,textW1, textH1 };
+        textRectO = { WINDOW_WIDTH * 7 / 9 , WINDOW_HEIGHT *6/10,textW1, textH1 };
+        textRectdraw = { WINDOW_WIDTH * 7 / 9 -20 , WINDOW_HEIGHT / 4*3,textW3, textH3 };
+        textRectX_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 5 * 2 ,textW2, textH2 };
+        textRectO_1 = { WINDOW_WIDTH * 9 / 10 + 40 , WINDOW_HEIGHT * 6 / 10, textW2, textH2 };
+        textRectdraw_1 = { WINDOW_WIDTH * 9 / 10 + 40, WINDOW_HEIGHT / 4 * 3,textW2, textH2 };
 
         // Clear the screen
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
@@ -459,10 +467,20 @@ int main(int argc, char* argv[]) {
            Counter = 0;
            number_of_draw++;
            std::cout << "it is a draw "<< std::endl<<"X Score = " << X_Score << ", O Score = " << O_Score << ", number of draws = " << number_of_draw << std::endl;
+           textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
+           textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
+           textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
            resetGame();
         }
 
-       
+        int x, y;
+        SDL_GetMouseState(&x, &y);
+        if (isPointInRect(x, y, button1.rect)) {
+            std::cout << "wtf" << std::endl;
+            textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
+            textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
+            textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
+        }
 
 
     }
