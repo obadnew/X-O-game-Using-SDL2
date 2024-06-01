@@ -192,7 +192,7 @@ void Rest_Score() {
 
 
 
-
+//games logic
 bool placeMark(int x, int y, Player currentPlayer) {
     int row = y / (WINDOW_HEIGHT / 3);
     int col = x / (WINDOW_WIDTH / 3);
@@ -246,17 +246,33 @@ void resetGame() {
 
 
 }
-bool checkWin(Player player) {
+bool checkWin(Player player, SDL_Renderer* renderer) {
     // Check rows and columns
     for (int i = 0; i < 3; ++i) {
-        if ((board[i][0] == player && board[i][1] == player && board[i][2] == player) ||
-            (board[0][i] == player && board[1][i] == player && board[2][i] == player)) {
+        if (board[i][0] == player && board[i][1] == player && board[i][2] == player) {
+            drawThickLine(renderer, 40, (i + 1) * WINDOW_HEIGHT / 3 - WINDOW_HEIGHT / 6, WINDOW_WIDTH *3 / 4 -40, (i + 1) * WINDOW_HEIGHT / 3 - WINDOW_HEIGHT / 6, 5);
+            SDL_RenderPresent(renderer);
+            SDL_Delay(1500);
+            return true;
+        }
+        else if (board[0][i] == player && board[1][i] == player && board[2][i] == player) {
+            drawThickLine(renderer, (i + 1)  * WINDOW_WIDTH / 4 - WINDOW_WIDTH / 8, 40, (i + 1) * WINDOW_WIDTH / 4 - WINDOW_WIDTH / 8, WINDOW_HEIGHT-40, 5);
+            SDL_RenderPresent(renderer);
+            SDL_Delay(500);
             return true;
         }
     }
     // Check diagonals
-    if ((board[0][0] == player && board[1][1] == player && board[2][2] == player) ||
-        (board[0][2] == player && board[1][1] == player && board[2][0] == player)) {
+    if (board[0][0] == player && board[1][1] == player && board[2][2] == player) {
+        drawThickLine(renderer, 40, 40, WINDOW_WIDTH * 3 / 4 - 40,  WINDOW_HEIGHT -40, 5);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(1500);
+        return true;
+    }
+    if (board[0][2] == player && board[1][1] == player && board[2][0] == player) {
+        drawThickLine(renderer, WINDOW_WIDTH * 3 / 4 - 40, 40,  40, WINDOW_HEIGHT - 40, 5);
+        SDL_RenderPresent(renderer);
+        SDL_Delay(1500);
         return true;
     }
     return false;
@@ -398,10 +414,11 @@ int main(int argc, char* argv[]) {
                 }
                 if (board[row][col] == NONE) {
                     board[row][col] = currentPlayer;
-                    if (checkWin(currentPlayer)) {
-                        std::cout << (currentPlayer == PLAYER_X ? "Player X" : "Player O") << " wins!" << std::endl;
+                    drawMarks(renderer);
+
+                    if (checkWin(currentPlayer, renderer)) {
+
                         currentPlayer == PLAYER_X ? X_Score++ : O_Score++;
-                        std::cout << "X Score = "<< X_Score<< ",   O Score = "<<O_Score<<",   number of draws = "<< number_of_draw<<std::endl;
                         textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
                         textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
                         textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
@@ -463,6 +480,9 @@ int main(int argc, char* argv[]) {
 
         // Present the renderer
         SDL_RenderPresent(renderer);
+
+
+
         if (Counter > 8) {
            Counter = 0;
            number_of_draw++;
@@ -476,7 +496,6 @@ int main(int argc, char* argv[]) {
         int x, y;
         SDL_GetMouseState(&x, &y);
         if (isPointInRect(x, y, button1.rect)) {
-            std::cout << "wtf" << std::endl;
             textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
             textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
             textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
