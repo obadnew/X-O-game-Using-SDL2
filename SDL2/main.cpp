@@ -3,6 +3,8 @@
 #include <SDL_ttf.h>
 #include<string>
 #include <SDL_image.h>
+#include <SDL_mixer.h>
+
 
 
 int WINDOW_WIDTH = 900;
@@ -275,6 +277,7 @@ bool checkWin(Player player, SDL_Renderer* renderer) {
         return true;
     }
     if (board[0][2] == player && board[1][1] == player && board[2][0] == player) {
+        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         drawThickLine(renderer, WINDOW_WIDTH * 3 / 4 - 40, 40,  40, WINDOW_HEIGHT - 40, 5);
         SDL_RenderPresent(renderer);
         SDL_Delay(500);
@@ -290,6 +293,11 @@ bool checkWin(Player player, SDL_Renderer* renderer) {
 int main(int argc, char* argv[]) {
     // Initialize SDL
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
+        return 1;
+    }
+
+    if (SDL_Init(SDL_INIT_AUDIO) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;
     }
@@ -339,11 +347,31 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
+    SDL_Surface* imageSurface = IMG_Load("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\tic-tac-toe_1.png");
+    if (!iconSurface) {
+        std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
     SDL_SetWindowIcon(window, iconSurface);
     SDL_FreeSurface(iconSurface);
 
+    SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, imageSurface);
+    SDL_FreeSurface(imageSurface);  // We can free the surface after creating the texture
+    if (!imageTexture) {
+        std::cerr << "SDL_CreateTextureFromSurface Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
 
-
+    //Audio code
+    Mix_Chunk* drawing_sound = Mix_LoadWAV("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\mixkit-video-game-mystery-alert-234.wav");
 
 
 
@@ -420,7 +448,7 @@ int main(int argc, char* argv[]) {
     SDL_Rect textRectX_win;
     SDL_Rect textRectO_win;
     SDL_Rect textRectNo_win;
-
+    SDL_Rect dstRect1;
 
     //clear screen button
 
@@ -467,6 +495,7 @@ int main(int argc, char* argv[]) {
                 }
                 if (board[row][col] == NONE) {
                     board[row][col] = currentPlayer;
+                    Mix_PlayChannel(-1, drawing_sound, 0);
                     drawMarks(renderer);
 
                     if (checkWin(currentPlayer, renderer)) {
@@ -510,20 +539,20 @@ int main(int argc, char* argv[]) {
 
         }
 
-        button.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 10, 100, 40 };
-        button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 10*3, 100, 40 };
-        textRect = { WINDOW_WIDTH * 7 / 9 +10, WINDOW_HEIGHT / 10 +10 , textW, textH }; 
-        textRect1 = { WINDOW_WIDTH * 7 / 9 +10, WINDOW_HEIGHT / 10 * 3 +10, textW, textH };
-        textRectX = { WINDOW_WIDTH * 7 / 9 + 10 , WINDOW_HEIGHT / 2 ,textW1, textH1 };
-        textRectO = { WINDOW_WIDTH * 7 / 9 + 10, WINDOW_HEIGHT *7/10,textW1, textH1 };
-        textRectdraw = { WINDOW_WIDTH * 7 / 9 + 10 , WINDOW_HEIGHT / 10*9,textW3, textH3 };
-        textRectX_1 = { WINDOW_WIDTH * 9 / 10 + 60, WINDOW_HEIGHT / 2 ,textW2, textH2 };
-        textRectO_1 = { WINDOW_WIDTH * 9 / 10 + 60 , WINDOW_HEIGHT * 7 / 10, textW2, textH2 };
-        textRectdraw_1 = { WINDOW_WIDTH * 9 / 10 +60, WINDOW_HEIGHT / 10 * 9,textW2, textH2 };
+        button.rect = { WINDOW_WIDTH * 7 / 9-10, WINDOW_HEIGHT / 4, 90, 40 };
+        button1.rect = { WINDOW_WIDTH * 8 / 9, WINDOW_HEIGHT / 4, 90, 40 };
+        textRect = { WINDOW_WIDTH * 7 / 9-2 , WINDOW_HEIGHT / 4 +10 , textW, textH }; 
+        textRect1 = { WINDOW_WIDTH * 8 / 9 +8 ,WINDOW_HEIGHT / 4 +10, textW, textH };
+        textRectX = { WINDOW_WIDTH * 7 / 9  , WINDOW_HEIGHT /10* 4 ,textW1, textH1 };
+        textRectO = { WINDOW_WIDTH * 7 / 9 , WINDOW_HEIGHT /20*11,textW1, textH1 };
+        textRectdraw = { WINDOW_WIDTH * 7 / 9  , WINDOW_HEIGHT / 10*7,textW3, textH3 };
+        textRectX_1 = { WINDOW_WIDTH * 9 / 10 + 50, WINDOW_HEIGHT / 10 * 4 ,textW2, textH2 };
+        textRectO_1 = { WINDOW_WIDTH * 9 / 10 + 50 , WINDOW_HEIGHT / 20 * 11, textW2, textH2 };
+        textRectdraw_1 = { WINDOW_WIDTH * 9 / 10 +50, WINDOW_HEIGHT / 10 * 7,textW2, textH2 };
         textRectX_win = { WINDOW_WIDTH /2*3/4 -200 , WINDOW_HEIGHT /2 - 75,textW4, textH4 };
         textRectO_win = { WINDOW_WIDTH / 2 * 3 / 4 - 200 , WINDOW_HEIGHT / 2 - 75,textW4, textH4 };
         textRectNo_win = { WINDOW_WIDTH / 2 * 3 / 4 - 200 , WINDOW_HEIGHT / 2 - 75,textW4, textH4 };
-
+        dstRect1 = { WINDOW_WIDTH /10*8+20, WINDOW_HEIGHT / 20, WINDOW_WIDTH/9, WINDOW_HEIGHT/7 };
 
 
         // Clear the screen
@@ -540,7 +569,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderCopy(renderer, textTexture_X_Score_1, nullptr, &textRectX_1);
         SDL_RenderCopy(renderer, textTexture_O_Score_1, nullptr, &textRectO_1);
         SDL_RenderCopy(renderer, textTexture_draw_Score_1, nullptr, &textRectdraw_1);
-
+        SDL_RenderCopy(renderer, imageTexture, nullptr, &dstRect1);
 
 
         // Draw the game board and marks
@@ -576,6 +605,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Clean up
+    SDL_DestroyTexture(imageTexture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
