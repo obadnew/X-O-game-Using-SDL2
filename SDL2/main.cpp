@@ -371,7 +371,15 @@ int main(int argc, char* argv[]) {
     }
 
     //Audio code
-    Mix_Chunk* drawing_sound = Mix_LoadWAV("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\mixkit-video-game-mystery-alert-234.wav");
+      // Initialize SDL_mixer
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) == -1) {
+        std::cerr << "Mix_OpenAudio Error: " << Mix_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    Mix_Chunk* chunk = Mix_LoadWAV("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\mixkit-video-game-mystery-alert-234.wav");
+    Mix_Chunk* chunk_win = Mix_LoadWAV("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\mixkit-video-game-win-2016.wav");
 
 
 
@@ -495,17 +503,20 @@ int main(int argc, char* argv[]) {
                 }
                 if (board[row][col] == NONE) {
                     board[row][col] = currentPlayer;
-                    Mix_PlayChannel(-1, drawing_sound, 0);
+                    Mix_PlayChannel(-1, chunk, 0);
+                   
                     drawMarks(renderer);
 
                     if (checkWin(currentPlayer, renderer)) {
                         if (currentPlayer == PLAYER_X) {
+                            Mix_PlayChannel(-1, chunk_win, 0);
                             textTexture_X_win = renderText("Player X Won", textColor, font_win, renderer);
                             SDL_RenderCopy(renderer, textTexture_X_win, nullptr, &textRectX_win);
                             SDL_RenderPresent(renderer);
                             SDL_Delay(1500);
                         }
                         else {
+                            Mix_PlayChannel(-1, chunk_win, 0);
                             textTexture_O_win = renderText("Player O Won", textColor, font_win, renderer);
                             SDL_RenderCopy(renderer, textTexture_O_win, nullptr, &textRectO_win);
                             SDL_RenderPresent(renderer);
@@ -606,6 +617,9 @@ int main(int argc, char* argv[]) {
 
     // Clean up
     SDL_DestroyTexture(imageTexture);
+    Mix_FreeChunk(chunk);
+    Mix_FreeChunk(chunk_win);
+    Mix_CloseAudio();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
