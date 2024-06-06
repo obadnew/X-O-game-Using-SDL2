@@ -13,7 +13,7 @@ int Counter = 0;
 int X_Score = 0;
 int O_Score = 0;
 int number_of_draw = 0;
-
+bool flag = false;
 
 
 enum Player { NONE, PLAYER_X, PLAYER_O };
@@ -190,7 +190,9 @@ void Rest_Score() {
     O_Score = 0;
     number_of_draw = 0;
 }
-
+void quit_flag (){
+    flag = true;
+}
 
 
 
@@ -291,84 +293,43 @@ bool checkWin(Player player, SDL_Renderer* renderer) {
 //main function
 
 int main(int argc, char* argv[]) {
-    // Initialize SDL
+    // Initialize SDL, tiff and mixer
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;
     }
-
     if (SDL_Init(SDL_INIT_AUDIO) != 0) {
         std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
         return 1;
     }
-
-    //initialize tiff
     if (TTF_Init() == -1) {
         std::cerr << "TTF_Init Error: " << TTF_GetError() << std::endl;
         SDL_Quit();
         return 1;
     }
 
-    // Create window
-    SDL_Window* window = SDL_CreateWindow("Tic-Tac-Toe", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-    if (window == nullptr) {
+    // Create preface window
+    
+    SDL_Window* window_preface = SDL_CreateWindow("Tic-Tac-Toe", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    if (window_preface == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         SDL_Quit();
-        return 1;
+        return 1; 
     }
 
-    // Create renderer
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (renderer == nullptr) {
-        SDL_DestroyWindow(window);
+    // Create preface renderer
+    
+    SDL_Renderer* renderer_preface = SDL_CreateRenderer(window_preface, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (renderer_preface == nullptr) {
+        SDL_DestroyWindow(window_preface);
         std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
         SDL_Quit();
         return 1;
     }
     
-    //icon code
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
-        return 1;
-    }
 
-    if (IMG_Init(IMG_INIT_PNG) == 0) {
-        std::cerr << "IMG_Init Error: " << IMG_GetError() << std::endl;
-        SDL_Quit();
-        return 1;
-    }
 
-    SDL_Surface* iconSurface = IMG_Load("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\tic-tac-toe.png");
-    if (!iconSurface) {
-        std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-    SDL_Surface* imageSurface = IMG_Load("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\tic-tac-toe_1.png");
-    if (!iconSurface) {
-        std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
-    SDL_SetWindowIcon(window, iconSurface);
-    SDL_FreeSurface(iconSurface);
-
-    SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer, imageSurface);
-    SDL_FreeSurface(imageSurface);  // We can free the surface after creating the texture
-    if (!imageTexture) {
-        std::cerr << "SDL_CreateTextureFromSurface Error: " << SDL_GetError() << std::endl;
-        SDL_DestroyRenderer(renderer);
-        SDL_DestroyWindow(window);
-        IMG_Quit();
-        SDL_Quit();
-        return 1;
-    }
+  
 
     //Audio code
       // Initialize SDL_mixer
@@ -396,7 +357,6 @@ int main(int argc, char* argv[]) {
         SDL_Quit();
         return 1;
     }
-
     TTF_Font* font_win = TTF_OpenFont("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\AovelSansRounded-rdDL.ttf", 75); // Path to your .ttf file and font size
     if (!font) {
         std::cerr << "TTF_OpenFont Error: " << TTF_GetError() << std::endl;
@@ -404,18 +364,123 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    Button button_preface;
+    button_preface.color = { 0, 0, 255, 0 };      // Blue
+    button_preface.hoverColor = { 0, 100, 255, 255 }; // Light blue
+    button_preface.clickColor = { 0, 0, 150, 255 }; // Dark blue
+    button_preface.isHovered = false;
+    button_preface.isClicked = false;
+    button_preface.onClick = quit_flag;
+    button_preface.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 100, 40 };
+
+
+
+
+
+    SDL_Rect textRect_preface;
     SDL_Color textColor = { 0, 0, 0, 255 }; // Black text
-    SDL_Texture* textTexture = renderText("Rest Game", textColor, font, renderer);
-    SDL_Texture* textTexture1 = renderText("Rest Score", textColor, font, renderer);
-    SDL_Texture* textTexture_X_Score = renderText("X Score", textColor, font_Score, renderer);
-    SDL_Texture* textTexture_O_Score = renderText("O Score", textColor, font_Score, renderer);
-    SDL_Texture* textTexture_draw_Score = renderText("Number of draws", textColor, font_Score, renderer);
-    SDL_Texture* textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
-    SDL_Texture* textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
-    SDL_Texture* textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
-    SDL_Texture* textTexture_X_win = renderText("Player X Won", textColor, font_win, renderer);
-    SDL_Texture* textTexture_O_win = renderText("Player O Won", textColor, font_win, renderer);
-    SDL_Texture* textTexture_No_win = renderText("No Winner", textColor, font_win, renderer);
+    int textWpreface = 0, textHpreface = 0;
+    SDL_Texture* textTexture_preface = renderText("play", textColor, font_win, renderer_preface);
+    SDL_QueryTexture(textTexture_preface, nullptr, nullptr, &textWpreface, &textHpreface);
+
+    SDL_SetRenderDrawColor(renderer_preface, 255, 255, 255, 255);
+    SDL_RenderClear(renderer_preface);
+    
+   
+    bool running = true;
+    SDL_Event event1;
+    while (running) {
+        // Handle events
+        while (SDL_PollEvent(&event1)){
+            handleButtonEvent(&event1, &button_preface);
+            button_preface.rect = { WINDOW_WIDTH /2, WINDOW_HEIGHT /2, 170, 80 };
+            textRect_preface = { WINDOW_WIDTH /2, WINDOW_HEIGHT / 2, textWpreface, textHpreface };
+            renderButton(renderer_preface, &button_preface, textTexture_preface, &textRect_preface);
+            SDL_RenderCopy(renderer_preface, textTexture_preface, nullptr, &textRect_preface);
+            SDL_RenderPresent(renderer_preface);
+            if (flag == true)
+                break;
+
+            
+        }
+        if (flag == true)
+            break;
+    }
+    SDL_DestroyRenderer(renderer_preface);
+    SDL_DestroyWindow(window_preface);
+
+
+
+
+
+
+
+
+
+    SDL_Window* window_main = SDL_CreateWindow("Tic-Tac-Toe", 100, 100, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
+    if (window_main == nullptr) {
+        std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Renderer* renderer_main = SDL_CreateRenderer(window_main, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+    if (renderer_main == nullptr) {
+        SDL_DestroyWindow(window_main);
+        std::cerr << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+    //icon code
+    if (IMG_Init(IMG_INIT_PNG) == 0) {
+        std::cerr << "IMG_Init Error: " << IMG_GetError() << std::endl;
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Surface* iconSurface = IMG_Load("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\tic-tac-toe.png");
+    if (!iconSurface) {
+        std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer_main);
+        SDL_DestroyWindow(window_main);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_Surface* imageSurface = IMG_Load("C:\\Users\\obadz\\OneDrive\\Desktop\\SDL2\\SDL2\\tic-tac-toe_1.png");
+    if (!iconSurface) {
+        std::cerr << "IMG_Load Error: " << IMG_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer_main);
+        SDL_DestroyWindow(window_main);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+    SDL_SetWindowIcon(window_main, iconSurface);
+    SDL_FreeSurface(iconSurface);
+
+    SDL_Texture* imageTexture = SDL_CreateTextureFromSurface(renderer_main, imageSurface);
+    SDL_FreeSurface(imageSurface);  // We can free the surface after creating the texture
+    if (!imageTexture) {
+        std::cerr << "SDL_CreateTextureFromSurface Error: " << SDL_GetError() << std::endl;
+        SDL_DestroyRenderer(renderer_main);
+        SDL_DestroyWindow(window_main);
+        IMG_Quit();
+        SDL_Quit();
+        return 1;
+    }
+
+    SDL_Texture* textTexture = renderText("Rest Game", textColor, font, renderer_main);
+    SDL_Texture* textTexture1 = renderText("Rest Score", textColor, font, renderer_main);
+    SDL_Texture* textTexture_X_Score = renderText("X Score", textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_O_Score = renderText("O Score", textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_draw_Score = renderText("Number of draws", textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer_main);
+    SDL_Texture* textTexture_X_win = renderText("Player X Won", textColor, font_win, renderer_main);
+    SDL_Texture* textTexture_O_win = renderText("Player O Won", textColor, font_win, renderer_main);
+    SDL_Texture* textTexture_No_win = renderText("No Winner", textColor, font_win, renderer_main);
 
 
     int textW = 0, textH = 0;
@@ -439,12 +504,12 @@ int main(int argc, char* argv[]) {
     SDL_QueryTexture(textTexture_O_win, nullptr, nullptr, &textW4, &textH4);
     SDL_QueryTexture(textTexture_No_win, nullptr, nullptr, &textW4, &textH4);
 
-    
-    
 
-    
-    
-    
+
+
+
+
+
     SDL_Rect textRect;
     SDL_Rect textRect1;
     SDL_Rect textRectX;
@@ -480,10 +545,9 @@ int main(int argc, char* argv[]) {
     button1.onClick = Rest_Score;
     button1.rect = { WINDOW_WIDTH * 7 / 9, WINDOW_HEIGHT / 4, 100, 40 };
 
-
-
+    
     // Main loop
-    bool running = true;
+    running = true;
     SDL_Event event;
     while (running) {
         // Handle events
@@ -505,27 +569,27 @@ int main(int argc, char* argv[]) {
                     board[row][col] = currentPlayer;
                     Mix_PlayChannel(-1, chunk, 0);
                    
-                    drawMarks(renderer);
+                    drawMarks(renderer_main);
 
-                    if (checkWin(currentPlayer, renderer)) {
+                    if (checkWin(currentPlayer, renderer_main)) {
                         if (currentPlayer == PLAYER_X) {
                             Mix_PlayChannel(-1, chunk_win, 0);
-                            textTexture_X_win = renderText("Player X Won", textColor, font_win, renderer);
-                            SDL_RenderCopy(renderer, textTexture_X_win, nullptr, &textRectX_win);
-                            SDL_RenderPresent(renderer);
+                            textTexture_X_win = renderText("Player X Won", textColor, font_win, renderer_main);
+                            SDL_RenderCopy(renderer_main, textTexture_X_win, nullptr, &textRectX_win);
+                            SDL_RenderPresent(renderer_main);
                             SDL_Delay(1500);
                         }
                         else {
                             Mix_PlayChannel(-1, chunk_win, 0);
-                            textTexture_O_win = renderText("Player O Won", textColor, font_win, renderer);
-                            SDL_RenderCopy(renderer, textTexture_O_win, nullptr, &textRectO_win);
-                            SDL_RenderPresent(renderer);
+                            textTexture_O_win = renderText("Player O Won", textColor, font_win, renderer_main);
+                            SDL_RenderCopy(renderer_main, textTexture_O_win, nullptr, &textRectO_win);
+                            SDL_RenderPresent(renderer_main);
                             SDL_Delay(1500);
                         }
                         currentPlayer == PLAYER_X ? X_Score++ : O_Score++;
-                        textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
-                        textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
-                        textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
+                        textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer_main);
+                        textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer_main);
+                        textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer_main);
                         resetGame();
                     }
                     
@@ -567,49 +631,50 @@ int main(int argc, char* argv[]) {
 
 
         // Clear the screen
-        SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        SDL_RenderClear(renderer);
+        SDL_SetRenderDrawColor(renderer_main, 255, 255, 255, 255);
+        SDL_RenderClear(renderer_main);
 
 
         // Render the button
-        renderButton(renderer, &button, textTexture, &textRect);
-        renderButton(renderer, &button1, textTexture1, &textRect1);
-        SDL_RenderCopy(renderer, textTexture_X_Score, nullptr, &textRectX);
-        SDL_RenderCopy(renderer, textTexture_O_Score, nullptr, &textRectO);
-        SDL_RenderCopy(renderer, textTexture_draw_Score, nullptr, &textRectdraw);
-        SDL_RenderCopy(renderer, textTexture_X_Score_1, nullptr, &textRectX_1);
-        SDL_RenderCopy(renderer, textTexture_O_Score_1, nullptr, &textRectO_1);
-        SDL_RenderCopy(renderer, textTexture_draw_Score_1, nullptr, &textRectdraw_1);
-        SDL_RenderCopy(renderer, imageTexture, nullptr, &dstRect1);
+        renderButton(renderer_main, &button, textTexture, &textRect);
+        renderButton(renderer_main, &button1, textTexture1, &textRect1);
+
+        SDL_RenderCopy(renderer_main, textTexture_X_Score, nullptr, &textRectX);
+        SDL_RenderCopy(renderer_main, textTexture_O_Score, nullptr, &textRectO);
+        SDL_RenderCopy(renderer_main, textTexture_draw_Score, nullptr, &textRectdraw);
+        SDL_RenderCopy(renderer_main, textTexture_X_Score_1, nullptr, &textRectX_1);
+        SDL_RenderCopy(renderer_main, textTexture_O_Score_1, nullptr, &textRectO_1);
+        SDL_RenderCopy(renderer_main, textTexture_draw_Score_1, nullptr, &textRectdraw_1);
+        SDL_RenderCopy(renderer_main, imageTexture, nullptr, &dstRect1);
 
 
         // Draw the game board and marks
-        drawBoard(renderer);
-        drawMarks(renderer);
+        drawBoard(renderer_main);
+        drawMarks(renderer_main);
 
         // Present the renderer
-        SDL_RenderPresent(renderer);
+        SDL_RenderPresent(renderer_main);
 
 
 
         if (Counter > 8) {
            Counter = 0;
            number_of_draw++;
-           SDL_RenderCopy(renderer, textTexture_No_win, nullptr, &textRectNo_win);
-           SDL_RenderPresent(renderer);
+           SDL_RenderCopy(renderer_main, textTexture_No_win, nullptr, &textRectNo_win);
+           SDL_RenderPresent(renderer_main);
            SDL_Delay(1500);          
-           textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
-           textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
-           textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
+           textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer_main);
+           textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer_main);
+           textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer_main);
            resetGame();
         }
 
         int x, y;
         SDL_GetMouseState(&x, &y);
         if (isPointInRect(x, y, button1.rect)) {
-            textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer);
-            textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer);
-            textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer);
+            textTexture_X_Score_1 = renderText(std::to_string(X_Score), textColor, font_Score, renderer_main);
+            textTexture_O_Score_1 = renderText(std::to_string(O_Score), textColor, font_Score, renderer_main);
+            textTexture_draw_Score_1 = renderText(std::to_string(number_of_draw), textColor, font_Score, renderer_main);
         }
 
 
@@ -620,8 +685,8 @@ int main(int argc, char* argv[]) {
     Mix_FreeChunk(chunk);
     Mix_FreeChunk(chunk_win);
     Mix_CloseAudio();
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+    SDL_DestroyRenderer(renderer_main);
+    SDL_DestroyWindow(window_main);
     SDL_Quit();
     TTF_Quit();
     return 0;
